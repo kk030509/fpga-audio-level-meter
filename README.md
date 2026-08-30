@@ -201,53 +201,6 @@ Level 0 ~ 8
 
 ---
 
-## I2S Timing Improvement
-
-초기 I2S Transmitter에서는 LRCK가 전환되는 시점과 다음 채널의 MSB 출력이 동시에 발생했습니다.
-
-```text
-Before
-
-LRCK Change
-     │
-     └── MSB Output
-         (same timing)
-```
-
-PCM5102A 출력에서 음질 문제가 발생하여 I2S Timing을 다시 확인했고,  
-Standard I2S에서는 LRCK가 변경된 후 **1 BCK 뒤에 다음 채널의 MSB가 출력되어야 한다는 점을 반영했습니다.**
-
-```text
-After
-
-LRCK Change
-     │
-     └── 1 BCK
-           │
-           └── Next Channel MSB
-```
-
-이를 위해 Left / Right 채널의 마지막 Bit를 출력하는 시점에 LRCK를 미리 전환하도록 수정했습니다.
-
----
-
-## Refactoring
-
-초기 구조에서는 Python으로 음원을 분석하여 대역별 Threshold를 생성하고, RTL에서는 계산된 값을 단순 비교하는 방식을 사용했습니다.
-
-리팩토링 후에는 Python의 역할을 **BRAM 초기화용 PCM 데이터 변환**으로 제한하고, FPGA 내부에서 다음 처리를 수행하도록 변경했습니다.
-
-```text
-Band Split
-→ Energy Average
-→ Fixed Threshold Mapping
-→ Matrix History
-→ Display Control
-```
-
-또한 DSP 연산 경로의 Timing Margin 확보를 위해 Q15 IIR Filter의 곱셈 및 누산 연산을 Pipeline 구조로 분리했습니다.
-
----
 
 ## Fixed Threshold Mapping
 
